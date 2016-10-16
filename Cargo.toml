@@ -1,0 +1,12 @@
+[package]
+name = "smelter"
+version = "0.0.1"
+authors = ["jonah.graham.hooper@gmail.com <Jonah Hooper>"]
+
+[lib]
+name = "smelter"
+proc-macro = true
+
+[dependencies]
+syn = "0.9"
+quote = "0.3"
