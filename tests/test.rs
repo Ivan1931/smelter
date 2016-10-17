@@ -55,3 +55,65 @@ fn can_generate_container_with_prefix() {
     let expected = ContainerWith { item: 1u32 , item_id: 5u64 };
     assert_eq!(container, expected);
 }
+
+#[derive(Builder, PartialEq, Debug, Default)]
+struct LotsOfFields<T: PartialEq> {
+    pub this: String,
+    structure: u32,
+    has: i32,
+    pub a: String,
+    lot: T,
+    pub of: &'static str,
+    fields: String,
+}
+
+#[test]
+fn public_fields_work() {
+    let this = "this".to_string();
+    let structure = 1u32;
+    let has = -10i32;
+    let a = "a".to_string();
+    let lot = 7u32;
+    let of = &"of";
+    let fields = "fields".to_string();
+    let expected: LotsOfFields<u32> = LotsOfFields {
+        this: this.clone(),
+        structure: structure.clone(),
+        has: has.clone(),
+        a: a.clone(),
+        lot: lot.clone(),
+        of: of,
+        fields: fields.clone(),
+    };
+    let lof: LotsOfFields<u32> = LotsOfFields::default()
+        .this(this)
+        .structure(structure)
+        .has(has)
+        .a(a)
+        .lot(lot)
+        .of(of)
+        .fields(fields);
+
+    assert_eq!(lof, expected);
+}
+
+#[derive(Builder, PartialEq, Debug)]
+struct WithLifeTime<'a> {
+    l: &'a String,
+}
+
+#[test]
+fn with_lifetime() {
+    let s1 = "hello".to_string();
+    let s2 = "hello".to_string();
+    let s3 = "world".to_string();
+    let with_lifetime = WithLifeTime {
+        l: &s1,
+    };
+
+    let expected = WithLifeTime {
+        l: &s3,
+    }.l(&s2);
+
+    assert_eq!(with_lifetime, expected);
+}
