@@ -5,36 +5,19 @@ use syn;
 #[derive(Default, PartialEq, Debug)]
 struct GlobalAttrData {
     default_prefix: Option<String>,
-    with_default: bool,
 }
 
 impl GlobalAttrData {
     fn from_attributes(attrs: &Vec<syn::Attribute>) -> GlobalAttrData {
-        let builder_ident = syn::Ident::new("Builder".to_string());
-        let derive_ident = syn::Ident::new("derive".to_string());
-        let default_ident = syn::Ident::new("Default".to_string());
         let prefix_ident = syn::Ident::new("prefix".to_string());
         let mut data = GlobalAttrData {
             default_prefix: None,
-            with_default: false,
         };
 
         use syn::MetaItem::*;
         use syn::Lit::*;
 
-        // OMFG: So much nesting
         for attr in attrs.iter() {
-            if let List(ref ident, ref items) = attr.value {
-                if ident == &derive_ident {
-                    for attr_item in items.iter() {
-                        if let &List(ref ident, _) = attr_item {
-                            if *ident == default_ident {
-                                data.with_default = true;
-                            }
-                        }
-                    }
-                }
-            }
             if let NameValue(ref key, Str(ref prefix, _)) = attr.value {
                 if *key == prefix_ident {
                     data.default_prefix = Some(prefix.clone());
