@@ -1,7 +1,11 @@
 [package]
 name = "smelter"
+description = "Custom derive attribute that automatically derives builder methods"
 version = "0.0.1"
 authors = ["jonah.graham.hooper@gmail.com <Jonah Hooper>"]
+license = "MIT"
+repository = "https://github.com/Ivan1931/smelter"
+homepage = "https://github.com/Ivan1931/smelter"
 
 [lib]
 name = "smelter"
