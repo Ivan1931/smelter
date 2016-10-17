@@ -49,6 +49,7 @@ impl GlobalAttrData {
 struct FieldAttrData {
     field_name: Option<String>,
     create_field: bool,
+    force_public: bool,
 }
 
 impl FieldAttrData {
@@ -61,6 +62,7 @@ impl FieldAttrData {
         };
         let field_name_ident = syn::Ident::new("field_name".to_string());
         let create_field_ident = syn::Ident::new("should_create".to_string());
+        let force_public_ident = syn::Ident::new("force_public".to_string());
         let smelter_attrs = get_smelter_attributes(attrs);
         for item in smelter_attrs.iter() {
             match item {
@@ -72,8 +74,13 @@ impl FieldAttrData {
                 &NameValue(ref key, Bool(ref value)) => {
                     if create_field_ident == key {
                         data.create_field = value.clone();
-                    }
+                    } 
                 },
+                &Word(ref ident) => {
+                    if force_public_ident == ident {
+                        data.force_public = true;
+                    }
+                }
                 _ => ()
             }
         }
@@ -118,6 +125,18 @@ fn get_method_name(field_attrs: &FieldAttrData, field: &syn::Field, mutable: boo
     }
 }
 
+fn get_visibility(field_attrs: &FieldAttrData, field: &syn::Field) -> syn::Ident {
+    let is_public = field_attrs.force_public || match field.vis {
+        syn::Visibility::Public => true,
+        _ => false,
+    };
+    if is_public {
+        syn::Ident::new("pub")
+    } else {
+        syn::Ident::new("pub")
+    }
+}
+
 fn expand_mutable(data: &CodeGenData, fields: &Vec<syn::Field>) -> quote::Tokens {
     let prefix = &data.attr_data.default_prefix;
     expand_fields(fields, |field| {
@@ -125,11 +144,12 @@ fn expand_mutable(data: &CodeGenData, fields: &Vec<syn::Field>) -> quote::Tokens
         let ident = field.ident.as_ref().unwrap();
         if field_attrs.create_field {
             let method_name = get_method_name(&field_attrs, field, true, &prefix);
+            let pub_ident = get_visibility(&field_attrs, &field);
             let ty = &field.ty;
             let struct_name = data.struct_name;
             let ty_generics = data.ty_generics;
             quote! {
-                fn #method_name(&mut self, __value: #ty) -> &mut #struct_name #ty_generics {
+                #pub_ident fn #method_name(&mut self, __value: #ty) -> &mut #struct_name #ty_generics {
                     self. #ident = __value;
                     self
                 }
@@ -148,12 +168,13 @@ fn expand_immutable(data: &CodeGenData, fields: &Vec<syn::Field>) -> quote::Toke
         let attr_data = FieldAttrData::from_attributes(&field.attrs);
         let ident = field.ident.as_ref().unwrap();
         if attr_data.create_field {
+            let method_name = get_method_name(&attr_data, &field, false, &prefix);
+            let pub_ident = get_visibility(&attr_data, &field);
             let ty = &field.ty;
             let struct_name = data.struct_name;
             let ty_generics = data.ty_generics;
-            let method_name = get_method_name(&attr_data, &field, false, &prefix);
             quote! {
-                fn #method_name(self, __value: #ty) -> #struct_name #ty_generics {
+                #pub_ident fn #method_name(self, __value: #ty) -> #struct_name #ty_generics {
                     #struct_name { #ident : __value, .. self }
                 }
             }

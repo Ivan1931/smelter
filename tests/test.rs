@@ -117,3 +117,15 @@ fn with_lifetime() {
 
     assert_eq!(with_lifetime, expected);
 }
+
+mod pub_definition;
+use pub_definition::*;
+
+#[test]
+fn exported_public_method() {
+    let mut t: PubTest = Default::default();
+    // We can access r mutable here
+    t.r_mut(1u32);
+    let not_expected: PubTest = Default::default();
+    assert!(&not_expected != &t);
+}
