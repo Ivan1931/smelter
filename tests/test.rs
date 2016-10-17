@@ -6,7 +6,7 @@ extern crate smelter;
 #[derive(PartialEq, Debug, Builder, Default)]
 struct Point {
     x: u32,
-    #[field_name="y_axis"]
+    #[smelter(field_name="y_axis")]
     y: u32,
 }
 
@@ -39,11 +39,11 @@ fn can_generate_mutable_methods() {
 }
 
 #[derive(PartialEq, Builder, Default, Debug)]
-#[prefix="with_"]
+#[smelter(prefix="with_")]
 struct ContainerWith<T>
     where T: PartialEq + Default {
         item: T,
-        #[field_name = "id"]
+        #[smelter(field_name = "id")]
         item_id: u64,
 }
 

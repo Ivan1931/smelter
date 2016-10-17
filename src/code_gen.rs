@@ -1,10 +1,29 @@
 #[macro_use]
 use quote;
 use syn;
+use syn::MetaItem::*;
+use syn::Lit::*;
 
 #[derive(Default, PartialEq, Debug)]
 struct GlobalAttrData {
     default_prefix: Option<String>,
+}
+
+fn get_smelter_attributes(attrs: &Vec<syn::Attribute>) -> Vec<syn::MetaItem> {
+    let smelter_ident = syn::Ident::new("smelter".to_string());
+    attrs.into_iter().filter(|attr| {
+        if let List(ref ident, _) = attr.value {
+            return ident == &smelter_ident
+        }
+        false
+    })
+    .flat_map(|attr| {
+        match attr.value {
+            List(_, ref items) => items.clone(),
+            _ => panic!("Attempted to extract item from non-list"),
+        }
+    })
+    .collect()
 }
 
 impl GlobalAttrData {
@@ -13,12 +32,10 @@ impl GlobalAttrData {
         let mut data = GlobalAttrData {
             default_prefix: None,
         };
+        let smelter_attrs = get_smelter_attributes(attrs);
 
-        use syn::MetaItem::*;
-        use syn::Lit::*;
-
-        for attr in attrs.iter() {
-            if let NameValue(ref key, Str(ref prefix, _)) = attr.value {
+        for item in smelter_attrs.iter() {
+            if let &NameValue(ref key, Str(ref prefix, _)) = item {
                 if *key == prefix_ident {
                     data.default_prefix = Some(prefix.clone());
                 }
@@ -44,14 +61,15 @@ impl FieldAttrData {
         };
         let field_name_ident = syn::Ident::new("field_name".to_string());
         let create_field_ident = syn::Ident::new("should_create".to_string());
-        for attr in attrs.iter() {
-            match attr.value {
-                NameValue(ref key, Str(ref value, _)) => {
+        let smelter_attrs = get_smelter_attributes(attrs);
+        for item in smelter_attrs.iter() {
+            match item {
+                &NameValue(ref key, Str(ref value, _)) => {
                     if field_name_ident == key {
                         data.field_name = Some(value.clone());
                     } 
                 },
-                NameValue(ref key, Bool(ref value)) => {
+                &NameValue(ref key, Bool(ref value)) => {
                     if create_field_ident == key {
                         data.create_field = value.clone();
                     }
