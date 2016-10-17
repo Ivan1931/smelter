@@ -129,3 +129,30 @@ fn exported_public_method() {
     let not_expected: PubTest = Default::default();
     assert!(&not_expected != &t);
 }
+
+#[derive(PartialEq, Builder, Default, Debug, Clone)]
+#[smelter(prefix="with_")]
+pub struct User {
+    pub uid: u64,
+    pub email: String,
+    pub alias: String,
+    pub friends: Vec<User>,
+}
+
+#[test]
+fn can_derive_collection() {
+    let mut u1 = User::default();
+    let u2 = User::default()
+                .with_email("email@example.com".to_string())
+                .with_alias("Ed".to_string())
+                .with_uid(10u64);
+    u1.with_email_mut("email@example.com".to_string())
+      .with_alias_mut("Ed".to_string())
+      .with_uid_mut(10u64);
+
+
+    assert_eq!(u1, u2);
+    let u3 = User::default().with_friends(vec![u1.clone(), u2.clone()]);
+    assert_eq!(vec![u1, u2], u3.friends);
+
+}
