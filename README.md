@@ -6,7 +6,7 @@ This is a rust library to derive "Builder" methods for arbitrary rust structs. I
 
 ```toml
 [dependencies]
-smelter = { git = "https://github.com/Ivan1931/smelter" }
+smelter = "*"
 ```
 
 Add the following to the file in which you with to use smelter.
