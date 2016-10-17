@@ -45,13 +45,13 @@ impl FieldAttrData {
         let field_name_ident = syn::Ident::new("field_name".to_string());
         let create_field_ident = syn::Ident::new("should_create".to_string());
         for attr in attrs.iter() {
-            match &attr.value {
-                &NameValue(ref key, Str(ref value, _)) => {
+            match attr.value {
+                NameValue(ref key, Str(ref value, _)) => {
                     if field_name_ident == key {
                         data.field_name = Some(value.clone());
                     } 
                 },
-                &NameValue(ref key, Bool(ref value)) => {
+                NameValue(ref key, Bool(ref value)) => {
                     if create_field_ident == key {
                         data.create_field = value.clone();
                     }
