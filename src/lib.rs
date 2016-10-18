@@ -1,5 +1,7 @@
 #![feature(proc_macro, proc_macro_lib)]
 #![cfg(not(test))]
+#![cfg_attr(feature="clippy", feature(plugin))]
+#![cfg_attr(feature="clippy", plugin(clippy))]
 
 extern crate proc_macro;
 extern crate syn;

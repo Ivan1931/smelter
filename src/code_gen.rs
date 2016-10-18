@@ -1,3 +1,4 @@
+#![allow(unknown_lints, needless_borrow)]
 #[macro_use]
 use quote;
 use syn;
@@ -9,7 +10,7 @@ struct GlobalAttrData {
     default_prefix: Option<String>,
 }
 
-fn get_smelter_attributes(attrs: &Vec<syn::Attribute>) -> Vec<syn::MetaItem> {
+fn get_smelter_attributes(attrs: &[syn::Attribute]) -> Vec<syn::MetaItem> {
     let smelter_ident = syn::Ident::new("smelter".to_string());
     attrs.into_iter().filter(|attr| {
         if let List(ref ident, _) = attr.value {
@@ -27,15 +28,15 @@ fn get_smelter_attributes(attrs: &Vec<syn::Attribute>) -> Vec<syn::MetaItem> {
 }
 
 impl GlobalAttrData {
-    fn from_attributes(attrs: &Vec<syn::Attribute>) -> GlobalAttrData {
+    fn from_attributes(attrs: &[syn::Attribute]) -> GlobalAttrData {
         let prefix_ident = syn::Ident::new("prefix".to_string());
         let mut data = GlobalAttrData {
             default_prefix: None,
         };
         let smelter_attrs = get_smelter_attributes(attrs);
 
-        for item in smelter_attrs.iter() {
-            if let &NameValue(ref key, Str(ref prefix, _)) = item {
+        for item in smelter_attrs {
+            if let NameValue(ref key, Str(ref prefix, _)) = item {
                 if *key == prefix_ident {
                     data.default_prefix = Some(prefix.clone());
                 }
@@ -53,7 +54,7 @@ struct FieldAttrData {
 }
 
 impl FieldAttrData {
-    fn from_attributes(attrs: &Vec<syn::Attribute>) -> FieldAttrData {
+    fn from_attributes(attrs: &[syn::Attribute]) -> FieldAttrData {
         use syn::MetaItem::*;
         use syn::Lit::*;
         let mut data: FieldAttrData = FieldAttrData {
@@ -64,19 +65,19 @@ impl FieldAttrData {
         let create_field_ident = syn::Ident::new("should_create".to_string());
         let force_public_ident = syn::Ident::new("force_public".to_string());
         let smelter_attrs = get_smelter_attributes(attrs);
-        for item in smelter_attrs.iter() {
+        for item in smelter_attrs {
             match item {
-                &NameValue(ref key, Str(ref value, _)) => {
+                NameValue(ref key, Str(ref value, _)) => {
                     if field_name_ident == key {
                         data.field_name = Some(value.clone());
                     } 
                 },
-                &NameValue(ref key, Bool(ref value)) => {
+                NameValue(ref key, Bool(ref value)) => {
                     if create_field_ident == key {
-                        data.create_field = value.clone();
+                        data.create_field = *value;
                     } 
                 },
-                &Word(ref ident) => {
+                Word(ref ident) => {
                     if force_public_ident == ident {
                         data.force_public = true;
                     }
@@ -97,7 +98,7 @@ struct CodeGenData<'a> {
     ty_generics: &'a syn::Generics,
 }
 
-fn expand_fields<F>(fields: &Vec<syn::Field>, f: F) -> quote::Tokens
+fn expand_fields<F>(fields: &[syn::Field], f: F) -> quote::Tokens
     where F: Fn(&syn::Field) -> quote::Tokens {
     let mut tokens = quote::Tokens::new();
     tokens.append_all(fields.iter().map(f));
@@ -105,9 +106,9 @@ fn expand_fields<F>(fields: &Vec<syn::Field>, f: F) -> quote::Tokens
 }
 
 fn get_method_name(field_attrs: &FieldAttrData, field: &syn::Field, mutable: bool, prefix: &Option<String>) -> syn::Ident {
-    let _prefix = match prefix {
-        &Some(ref string) => string.clone(),
-        &None => "".to_string(),
+    let _prefix = match *prefix {
+        Some(ref string) => string.clone(),
+        None => "".to_string(),
     };
     let base_name = match field_attrs.field_name {
         Some(ref field_name) => {
@@ -133,17 +134,17 @@ fn get_visibility(field_attrs: &FieldAttrData, field: &syn::Field) -> syn::Ident
     if is_public {
         syn::Ident::new("pub")
     } else {
-        syn::Ident::new("pub")
+        syn::Ident::new("")
     }
 }
 
-fn expand_mutable(data: &CodeGenData, fields: &Vec<syn::Field>) -> quote::Tokens {
+fn expand_mutable(data: &CodeGenData, fields: &[syn::Field]) -> quote::Tokens {
     let prefix = &data.attr_data.default_prefix;
     expand_fields(fields, |field| {
         let field_attrs = FieldAttrData::from_attributes(&field.attrs);
         let ident = field.ident.as_ref().unwrap();
         if field_attrs.create_field {
-            let method_name = get_method_name(&field_attrs, field, true, &prefix);
+            let method_name = get_method_name(&field_attrs, field, true, prefix);
             let pub_ident = get_visibility(&field_attrs, &field);
             let ty = &field.ty;
             let struct_name = data.struct_name;
@@ -162,13 +163,13 @@ fn expand_mutable(data: &CodeGenData, fields: &Vec<syn::Field>) -> quote::Tokens
     })
 }
 
-fn expand_immutable(data: &CodeGenData, fields: &Vec<syn::Field>) -> quote::Tokens {
+fn expand_immutable(data: &CodeGenData, fields: &[syn::Field]) -> quote::Tokens {
     let prefix = &data.attr_data.default_prefix;
-    expand_fields(fields, |field| {
+    expand_fields(fields, move |field| {
         let attr_data = FieldAttrData::from_attributes(&field.attrs);
         let ident = field.ident.as_ref().unwrap();
         if attr_data.create_field {
-            let method_name = get_method_name(&attr_data, &field, false, &prefix);
+            let method_name = get_method_name(&attr_data, &field, false, prefix);
             let pub_ident = get_visibility(&attr_data, &field);
             let ty = &field.ty;
             let struct_name = data.struct_name;
@@ -188,10 +189,10 @@ fn expand_immutable(data: &CodeGenData, fields: &Vec<syn::Field>) -> quote::Toke
 
 fn expand_methods(ast: &syn::MacroInput) -> quote::Tokens {
     let body = &ast.body;
-    match body {
-        &syn::Body::Struct(ref variant) => {
-            match variant {
-                &syn::VariantData::Struct(ref fields) => {
+    match *body {
+        syn::Body::Struct(ref variant) => {
+            match *variant {
+                syn::VariantData::Struct(ref fields) => {
                     let struct_name = &ast.ident;
                     let (_, ty_generics, _) = ast.generics.split_for_impl();
                     let attr_data = GlobalAttrData::from_attributes(&ast.attrs);
@@ -212,7 +213,7 @@ fn expand_methods(ast: &syn::MacroInput) -> quote::Tokens {
                 _ => panic!("Derive builder is not supported for tuple structs and the unit struct")
             }
         },
-        &syn::Body::Enum(_) => panic!("Enums are not supported"),
+        syn::Body::Enum(_) => panic!("Enums are not supported"),
     }
 }
 
