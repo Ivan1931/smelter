@@ -69,6 +69,9 @@ impl FieldAttrData {
             match item {
                 NameValue(ref key, Str(ref value, _)) => {
                     if field_name_ident == key {
+                        if &"".to_string() == value {
+                            panic!("Error: empty `field_name` has been specified as a smelter attribute")
+                        }
                         data.field_name = Some(value.clone());
                     } 
                 },
