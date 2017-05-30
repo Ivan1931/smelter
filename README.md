@@ -13,6 +13,7 @@ smelter = "*"
 ```
 
 Add the following to the file in which you with to use smelter.
+
 ```
 #![feature(proc_macro, custom_attribute)]
 
@@ -35,6 +36,7 @@ Generated Code
 <tr>
 <td>
 <pre lang="rust">
+
 #![feature(proc_macro, custom_attribute)]
 
 #[macro_use]
@@ -48,8 +50,11 @@ pub struct User {
     pub alias: String,
     pub friends: Vec<User>,
 }
+
 </pre>
+
 </td>
+
 <td>
 <pre lang="rust">
 # [ allow ( dead_code ) ]
@@ -87,7 +92,10 @@ impl User {
 </td>
 </tr>
 </table>
+
+
 ### Invocation
+
 ```rust
 // ... somewhere in your code
      let mut u1 = User::default();
