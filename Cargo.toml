@@ -1,7 +1,7 @@
 [package]
 name = "smelter"
 description = "Custom derive attribute that automatically derives builder methods"
-version = "0.0.1"
+version = "0.0.2"
 authors = ["jonah.graham.hooper@gmail.com <Jonah Hooper>"]
 license = "MIT"
 repository = "https://github.com/Ivan1931/smelter"
@@ -14,4 +14,4 @@ proc-macro = true
 [dependencies]
 syn = "0.9"
 quote = "0.3"
-clippy = { version = "*", optional = true }
+clippy = { version = "0.0.165", optional = true }

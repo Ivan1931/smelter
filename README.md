@@ -2,7 +2,7 @@
 [![Latest Version](https://img.shields.io/crates/v/smelter.svg)](https://crates.io/crates/smelter)
 
 # About
-This is a rust library to derive "Builder" methods for arbitrary rust structs. It relies on the Macros-1.1 RFC and currently only works with the nightly rust build. 
+Smelter is an extremely lightweight rust proc_macro library to derive "Builder" methods for arbitrary rust structs.
 
 # Usage
 ## Setup
@@ -115,8 +115,4 @@ impl User {
 For more examples see the [test.rs](https://github.com/Ivan1931/smelter/blob/master/tests/test.rs)
 
 # Caveats
-* Currently this library will only work on a nightly build of rust.
-
-* It relies on [macros 1.1](https://github.com/rust-lang/rfcs/blob/master/text/1681-macros-1.1.md)
-
 * Will not work for enums, unit structs and tuple structs. 
