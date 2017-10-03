@@ -1,13 +1,16 @@
 /*!
 # Introduction
 Smelter is a proc macro that automatically derives methods for a builder
-pattern from a struct. 
+pattern from a struct.
 Adding `#[derive(Builder)]` above your struct will instruct smelter to
 automatically generate a "builder" method for each field.
 For example:
 
-```
-#[derive(Builder)]
+```rust,ignore
+#[macro_use]
+extern crate smelter;
+
+#[derive(Builder, Default)]
 struct User {
     alias: String,
     email: String,
@@ -15,11 +18,10 @@ struct User {
 }
 ```
 
-Allows you to call
+Generates a bunch of builder methods that allow you to create the User object in the following fashion:
 
-```
-// new method is *not* derived by this macro.
-let p = User::new() 
+```rust,ignore
+let p = User::Default()
             .alias(some_alias_string)
             .email(some_email_string)
             .uid(some_uid);
@@ -35,9 +37,7 @@ smelter = "*"
 
 Add the following to your `lib.rs` or `main.rs` file:
 
-```
-#![feature(proc_macro, custom_attribute)]
-
+```rust,ignore
 #[macro_use]
 extern crate smelter;
 ```
@@ -46,18 +46,20 @@ Then just add `#[derive(Builder)]` above your struct,
 
 
 # Simple Example
+
 This example illustrates what code get generated:
 
-```
+```rust,ignore
 #[derive(Builder)]
 struct Point {
     x: u32,
     y: u32,
 }
 ```
+
 Generates the methods:
 
-```
+```rust,ignore
 impl Point {
     pub fn x(self, __value: u32) -> Point {
         Point { x: __value, ..self }
@@ -78,10 +80,13 @@ impl Point {
     }
 }
 ```
+
 # Custom Prefix
 A prefix can be added before all generated methods.
+
 ## Example
-```
+
+```rust,ignore
 #[derive(Builder)]
 #[smelter(prefix="with_")]
 pub struct Point {
@@ -89,9 +94,10 @@ pub struct Point {
     pub y: u32,
 }
 ```
+
 Will generate:
 
-```
+```rust,ignore
 impl Point {
     pub fn with_x(self, __value: u32) -> Point {
         Point { x: __value, ..self }
@@ -112,11 +118,14 @@ impl Point {
     }
 }
 ```
+
 # Custom fields
 It's also possible to change the name of the generated method by placing
 the following attribute above the field declaration:
+
 ## Example
-```
+
+```rust,ignore
 #[derive(PartialEq, Debug, Builder, Default)]
 struct container<T> 
     where T: partialeq  + default {
@@ -124,9 +133,10 @@ struct container<T>
     item: T,
 }
 ```
+
 Will generate:
 
-```
+```rust,ignore
 impl<T> Container<T>
     where T: PartialEq + Default
 {
@@ -150,7 +160,9 @@ By default `#[derive(Builder)]` will mimic the visibility of fields in your stru
 For example if some field `p` is public (has a `pub` identifier), the generated `p` and `p_mut` builder methods will be public.
 
 ## Example
-```
+
+```rust,ignore
+#[derive(Builder)]
 pub struct AssymetricKeyPair<A, B> {
     pub public_key: A,
     private_key: B,
@@ -159,7 +171,7 @@ pub struct AssymetricKeyPair<A, B> {
 
 Will generate the code:
 
-```
+```rust,ignore
 impl<A, B> AssymetricKeyPair<A, B> {
     pub fn public_key(self, __value: A) -> AssymetricKeyPair<A, B> {
         AssymetricKeyPair { public_key: __value, ..self }
@@ -182,10 +194,9 @@ impl<A, B> AssymetricKeyPair<A, B> {
 ```
 
 # Caveats
-* At the moment, builder methods for enums, tuple structs and unit structs cannot be generated.
-* The library makes use of [macros 1.1](https://github.com/rust-lang/rfcs/blob/master/text/1681-macros-1.1.md) a feature, that is currenly only available for [nighlty builds](https://doc.rust-lang.org/book/nightly-rust.html).
+At the moment, builder methods for enums, tuple structs and unit structs cannot be generated.
+
 */
-#![feature(proc_macro, proc_macro_lib)]
 #![cfg(not(test))]
 #![cfg_attr(feature="clippy", feature(plugin))]
 #![cfg_attr(feature="clippy", plugin(clippy))]
@@ -199,7 +210,6 @@ extern crate quote;
 use proc_macro::TokenStream;
 mod code_gen;
 
-#[proc_macro_derive(Builder)]
 /**
  # Arguments
  * `input` stream of tokens obtained from the compiler.
@@ -212,6 +222,7 @@ mod code_gen;
  * Arguments to `#[smelter(field_name="..")]` or `#[smelter(prefix="..")]` are not strings.
  * An empty `field_name` is specified. IE: `#[smelter(field_name="")]`
  */
+#[proc_macro_derive(Builder, attributes(smelter))]
 pub fn derive_builder(input: TokenStream) -> TokenStream {
     let source = input.to_string();
 

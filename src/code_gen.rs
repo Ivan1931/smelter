@@ -1,6 +1,7 @@
 #![allow(unknown_lints, needless_borrow)]
-#[macro_use]
+
 use quote;
+
 use syn;
 use syn::MetaItem::*;
 use syn::Lit::*;
@@ -227,8 +228,6 @@ pub fn expand_builder(ast: syn::MacroInput) -> quote::Tokens {
     let (impl_generics, ty_generics, where_clause) = ast.generics.split_for_impl();
     quote! {
         #[allow(unused_attributes)]
-        #ast
-
         #[allow(dead_code)]
         impl #impl_generics #struct_name #ty_generics #where_clause {
             #methods
